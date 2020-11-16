@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn import linear_model
 from itertools import permutations
 from sklearn.preprocessing import StandardScaler
@@ -60,11 +61,17 @@ class feature_manager(object):
     """
 
     def __init__(self, method="intuitive", tolerance=0.75, ratio_num_range=(15, 50)):
+        """
+        Initializes feature_manager class
+
+        Parameters:
+            method (string): "intuitive", "ohlson", "all_ratios", "pca", "lasso","pca_lasso", "lasso_pca"
+            tolerance (float): tolerance for minimum explained variance for PCA feature reduction
+            ratio_num_range (tuple): acceptable range of features after restricting
+        """
         self.method = method  ### the method name used: pca, pca_lasso, lasso, lasso_pca, ohlson, intuitive, raw, all_ratios, clustering(implement this)
         self.TOL = tolerance  ### Minimum variance for PCA
-        self.ratio_num_range = (
-            ratio_num_range  ### (MIN, MAX) numbers of selected ratios
-        )
+        self.ratio_num_range = ratio_num_range  ### (MIN, MAX) numbers of selected ratios
         if ratio_num_range[0] > ratio_num_range[1]:  # check min<=max
             self.ratio_num_range = (ratio_num_range[1], ratio_num_range[0])
         self.observations = {
@@ -72,9 +79,7 @@ class feature_manager(object):
         }  ### Dictionary of the observation indices for each dataset trained/tested
         self.features = None  ### names of the features used before any PCA
         self.flag = None  ### name of the default flag
-        self.inf_na_replacement = (
-            []
-        )  ### list of tuples (RatioName, PositiveInf, NegativeInf, NaN)
+        self.inf_na_replacement = []  ### list of tuples (RatioName, PositiveInf, NegativeInf, NaN)
         self.trfm = {
             "whiten": None,
             "pca": None,
@@ -161,11 +166,13 @@ class feature_manager(object):
         # data.drop(drop_var, axis=1, inplace=True)
 
         ### Compute Accounting Ratios - removed for confidentiality
+        """
 
         var_names = data.columns
         drop_var = var_names[~var_names.isin(keep)]
         data.drop(drop_var, axis=1, inplace=True)
         self.features = data.columns[1:]
+        """
         return data
 
     def extract_ohlson(self, data):
@@ -291,10 +298,6 @@ class feature_manager(object):
                     data, min_var=0.95, rnr=(self.ratio_num_range[1], data.shape[1] - 2)
                 )  # No INF & NAN
                 data = self.lasso_restrict(data, a=1e-1)
-
-            elif self.method == "clustering":
-                data = self.cluster_restriction(data)
-
             else:
                 print("Feature selection method name not known.\n")
         return data
